@@ -8,7 +8,8 @@ endif
 
 FSTAR_FILES:=$(wildcard *.fst *.fsti)
 
-FSTAR_OPTIONS=$(OTHERFLAGS) --cache_checked_modules --warn_error @241 --already_cached '*,-Steel' --load_cmxs steel
+STEEL_NO_PLUGIN=
+FSTAR_OPTIONS=$(OTHERFLAGS) --cache_checked_modules --warn_error @241 --already_cached '*,-Steel' $(if $(STEEL_NO_PLUGIN),,--load_cmxs steel)
 
 COMPAT_INDEXED_EFFECTS=--compat_pre_typed_indexed_effects
 MY_FSTAR=$(RUNLIM) $(FSTAR) $(SIL) $(FSTAR_OPTIONS)

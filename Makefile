@@ -108,3 +108,8 @@ install-share:
 	+$(MAKE) -C share/steel install
 
 install: install-ocaml install-lib install-include install-share install-src-c
+
+
+.PHONY: reboot
+reboot:
+	make -C lib/steel steel STEEL_NO_PLUGIN=1
