@@ -97,7 +97,7 @@ let st_equiv_soundness (g:stt_env)
             [SMTPat (RT.open_term e x)]
           = RT.open_term_spec e x
       in
-      let pre_equiv = VPropEquiv.vprop_equiv_unit_soundness pre_typing eq_pre in
+      let pre_equiv = VPropEquiv.vprop_equiv_unit_soundness pre_typing (unE eq_pre) in
       let g' = push_binding g x ppname_default (comp_res c0) in
       elab_open_commute (comp_post c0) x;
       elab_open_commute (comp_post c1) x;      
@@ -107,7 +107,7 @@ let st_equiv_soundness (g:stt_env)
                     (stt_vprop_equiv 
                       (RT.open_term (elab_term (comp_post c0)) x)
                       (RT.open_term (elab_term (comp_post c1)) x))
-          = VPropEquiv.vprop_equiv_unit_soundness post_typing eq_post
+          = VPropEquiv.vprop_equiv_unit_soundness post_typing (unE eq_post)
       in
       let t0 = elab_term (comp_res c0)  in
       let r_res_typing = tot_typing_soundness res_typing in
@@ -138,7 +138,7 @@ let st_equiv_soundness (g:stt_env)
         : RT.tot_typing (elab_env g)
                         (elab_comp_post c1) //mk_abs t0 (elab_pure (comp_post c1)))
                         (elab_term (vprop_arrow (comp_res c0)))
-        = mk_t_abs_tot _ _ res_typing (fst (vprop_equiv_typing eq_post) post_typing)
+        = mk_t_abs_tot _ _ res_typing (fst (vprop_equiv_typing (unE eq_post)) post_typing)
       in
       let (| pf, d |) =
         inst_intro_vprop_post_equiv r_res_typing abs_post0_typing abs_post1_typing d in
@@ -150,7 +150,7 @@ let st_equiv_soundness (g:stt_env)
       in
       inst_sub_stt #_ #(comp_u c1) r_res_typing 
                   (tot_typing_soundness pre_typing)
-                  (tot_typing_soundness (fst (vprop_equiv_typing eq_pre) pre_typing))
+                  (tot_typing_soundness (fst (vprop_equiv_typing (unE eq_pre)) pre_typing))
                   abs_post0_typing
                   abs_post1_typing
                   pre_equiv

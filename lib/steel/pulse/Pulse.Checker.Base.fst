@@ -98,7 +98,7 @@ let st_equiv_post (#g:env) (#t:st_term) (#c:comp_st) (d:st_typing g t c)
     let (| u_of, pre_typing, x, post_typing |) = Metatheory.(st_comp_typing_inversion (comp_typing_inversion (st_typing_correctness d))) in
     let veq = veq x in
     let st_equiv : st_equiv g c c' =
-        ST_VPropEquiv g c c' x pre_typing u_of post_typing (VE_Refl _ _) veq
+        ST_VPropEquiv g c c' x pre_typing u_of post_typing (E (VE_Refl _ _)) (E veq)
     in
     T_Equiv _ _ _ _ d st_equiv
 

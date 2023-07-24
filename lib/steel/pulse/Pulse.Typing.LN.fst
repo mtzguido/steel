@@ -742,9 +742,9 @@ let st_equiv_ln #g #c1 #c2 (d:st_equiv g c1 c2)
     (requires ln_c c1)
     (ensures ln_c c2)
   = let ST_VPropEquiv _ _ _ x (E dpre) _dres _dpost eq_pre eq_post = d in
-    vprop_equiv_ln eq_pre;
+    vprop_equiv_ln (unE eq_pre);
     open_term_ln_inv' (comp_post c1) (term_of_no_name_var x) 0;
-    vprop_equiv_ln eq_post;
+    vprop_equiv_ln (unE eq_post);
     open_term_ln' (comp_post c2) (term_of_no_name_var x) 0
 
 let bind_comp_ln #g #x #c1 #c2 #c (d:bind_comp g x c1 c2 c)
@@ -935,7 +935,7 @@ let rec st_typing_ln (#g:_) (#t:_) (#c:_)
 
     | T_Rewrite _ _ _ p_typing equiv_p_q ->
       tot_typing_ln p_typing;
-      vprop_equiv_ln equiv_p_q
+      vprop_equiv_ln (unE equiv_p_q)
 
     | T_WithLocal g init body init_t c x init_typing init_t_typing c_typing body_typing ->
       tot_typing_ln init_typing;

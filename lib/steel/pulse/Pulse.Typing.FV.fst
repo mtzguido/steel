@@ -258,8 +258,8 @@ let st_equiv_freevars #g (#c1 #c2:_)
     (requires freevars_comp c1 `Set.subset` vars_of_env g)
     (ensures freevars_comp c2 `Set.subset` vars_of_env g)    
   = let ST_VPropEquiv _ _ _ x _ _ _ eq_pre eq_post = d in
-    vprop_equiv_freevars eq_pre;
-    vprop_equiv_freevars eq_post;
+    vprop_equiv_freevars (unE eq_pre);
+    vprop_equiv_freevars (unE eq_post);
     freevars_open_term_inv (comp_post c1) x;     
     freevars_open_term_inv (comp_post c2) x
 
@@ -545,7 +545,7 @@ let rec st_typing_freevars (#g:_) (#t:_) (#c:_)
 
    | T_Rewrite _ _ _ p_typing equiv_p_q ->
      tot_typing_freevars p_typing;
-     vprop_equiv_freevars equiv_p_q
+     vprop_equiv_freevars (unE equiv_p_q)
 
 
    | T_WithLocal _ init body init_t c x init_typing u_typing c_typing body_typing ->

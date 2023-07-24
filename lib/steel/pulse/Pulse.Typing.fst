@@ -440,6 +440,7 @@ let comp_admit (c:ctag) (s:st_comp) : comp =
 noeq
 type my_erased (a:Type) = | E of a
 
+let unE (E x) = x
 
 let typing (g:env) (e:term) (t:term) =
     RT.tot_typing (elab_env g) (elab_term e) (elab_term t)
@@ -471,10 +472,10 @@ type st_equiv : env -> comp -> comp -> Type =
       tot_typing g (comp_pre c1) tm_vprop ->
       tot_typing g (comp_res c1) (tm_type (comp_u c1)) ->
       tot_typing (push_binding g x ppname_default (comp_res c1)) (open_term (comp_post c1) x) tm_vprop ->
-      vprop_equiv g (comp_pre c1) (comp_pre c2) ->
-      vprop_equiv (push_binding g x ppname_default (comp_res c1))
+      my_erased (vprop_equiv g (comp_pre c1) (comp_pre c2)) ->
+      my_erased (vprop_equiv (push_binding g x ppname_default (comp_res c1))
                   (open_term (comp_post c1) x)
-                  (open_term (comp_post c2) x) ->      
+                  (open_term (comp_post c2) x)) ->
       st_equiv g c1 c2
 
 [@@ no_auto_projectors]
@@ -824,7 +825,7 @@ type st_typing : env -> st_term -> comp -> Type =
       p:vprop ->
       q:vprop ->
       tot_typing g p tm_vprop ->
-      vprop_equiv g p q ->
+      my_erased (vprop_equiv g p q) ->
       st_typing g (wr (Tm_Rewrite { t1=p; t2=q } ))
                   (comp_rewrite p q)
 
