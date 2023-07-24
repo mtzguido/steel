@@ -513,7 +513,7 @@ let (check :
                                                                     (Prims.of_int (42))
                                                                     (Prims.of_int (9))
                                                                     (Prims.of_int (42))
-                                                                    (Prims.of_int (43)))))
+                                                                    (Prims.of_int (47)))))
                                                                     (FStar_Sealed.seal
                                                                     (Obj.magic
                                                                     (FStar_Range.mk_range
