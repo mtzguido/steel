@@ -15,7 +15,6 @@ module SS = FStar.Syntax.Subst
 module R = FStar.Compiler.Range
 module BU = FStar.Compiler.Util
 module P =  FStar.Syntax.Print
-type error = string & R.range
 
 let err a = nat -> either a error & nat
 
