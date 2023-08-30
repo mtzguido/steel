@@ -11,6 +11,7 @@ open Pulse.Checker.Base
 module L = FStar.List.Tot
 module T = FStar.Tactics.V2
 module P = Pulse.Syntax.Printer
+module Pprint = FStar.Stubs.Pprint
 module Metatheory = Pulse.Typing.Metatheory
 module PS = Pulse.Checker.Prover.Substs
 module ElimExists = Pulse.Checker.Prover.ElimExists
@@ -158,13 +159,16 @@ let rec prover
         let pst_opt = match_q pst q tl () 0 in
         match pst_opt with
         | None ->
-          let msg = Printf.sprintf
-            "cannot prove vprop %s in the context: %s\n(the prover was started with goal %s and initial context %s)"
-            (P.term_to_string q)
-            (P.term_to_string (list_as_vprop pst.remaining_ctxt))
-            (P.term_to_string preamble.goals)
-            (P.term_to_string preamble.ctxt) in
-          fail pst.pg None msg
+          let open Pprint in
+          let open Pulse.Show in
+          let msg = [
+            arbitrary_string (Printf.sprintf "Cannot prove vprop %s" (show q));
+            arbitrary_string (Printf.sprintf "In the context\n\t%s" (show (list_as_vprop pst.remaining_ctxt)));
+            arbitrary_string (Printf.sprintf "The prover was started with goal\n\t%s" (show preamble.goals));
+            arbitrary_string (Printf.sprintf "and initial context\n\t%s" (show preamble.ctxt));
+          ]
+          in
+          fail_doc pst.pg (Some q.range) msg
         | Some pst -> prover pst  // a little wasteful?
 #pop-options
 
