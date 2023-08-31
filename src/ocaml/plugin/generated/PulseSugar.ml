@@ -1,7 +1,5 @@
 open Prims
 type rng = FStar_Compiler_Range_Type.range
-let (dummyRange : FStar_Compiler_Range_Type.range) =
-  FStar_Compiler_Range_Type.dummyRange
 type binder =
   (FStar_Parser_AST.aqual * FStar_Ident.ident * FStar_Parser_AST.term)
 type binders = binder Prims.list
@@ -45,64 +43,62 @@ let (__proj__Mkvprop__item__vrange : vprop -> rng) =
 let (as_vprop : vprop' -> rng -> vprop) = fun v -> fun r -> { v; vrange = r }
 type st_comp_tag =
   | ST 
-  | STAtomic 
-  | STGhost 
+  | STAtomic of FStar_Parser_AST.term 
+  | STGhost of FStar_Parser_AST.term 
 let (uu___is_ST : st_comp_tag -> Prims.bool) =
   fun projectee -> match projectee with | ST -> true | uu___ -> false
 let (uu___is_STAtomic : st_comp_tag -> Prims.bool) =
-  fun projectee -> match projectee with | STAtomic -> true | uu___ -> false
+  fun projectee ->
+    match projectee with | STAtomic _0 -> true | uu___ -> false
+let (__proj__STAtomic__item___0 : st_comp_tag -> FStar_Parser_AST.term) =
+  fun projectee -> match projectee with | STAtomic _0 -> _0
 let (uu___is_STGhost : st_comp_tag -> Prims.bool) =
-  fun projectee -> match projectee with | STGhost -> true | uu___ -> false
+  fun projectee -> match projectee with | STGhost _0 -> true | uu___ -> false
+let (__proj__STGhost__item___0 : st_comp_tag -> FStar_Parser_AST.term) =
+  fun projectee -> match projectee with | STGhost _0 -> _0
 type computation_type =
   {
   tag: st_comp_tag ;
-  preconditions: vprop Prims.list ;
+  precondition: vprop ;
   return_name: FStar_Ident.ident ;
   return_type: FStar_Parser_AST.term ;
-  postconditions: vprop Prims.list ;
-  opens: FStar_Parser_AST.term Prims.list ;
+  postcondition: vprop ;
   range: rng }
 let (__proj__Mkcomputation_type__item__tag : computation_type -> st_comp_tag)
   =
   fun projectee ->
     match projectee with
-    | { tag; preconditions; return_name; return_type; postconditions; 
-        opens; range;_} -> tag
-let (__proj__Mkcomputation_type__item__preconditions :
-  computation_type -> vprop Prims.list) =
+    | { tag; precondition; return_name; return_type; postcondition; range;_}
+        -> tag
+let (__proj__Mkcomputation_type__item__precondition :
+  computation_type -> vprop) =
   fun projectee ->
     match projectee with
-    | { tag; preconditions; return_name; return_type; postconditions; 
-        opens; range;_} -> preconditions
+    | { tag; precondition; return_name; return_type; postcondition; range;_}
+        -> precondition
 let (__proj__Mkcomputation_type__item__return_name :
   computation_type -> FStar_Ident.ident) =
   fun projectee ->
     match projectee with
-    | { tag; preconditions; return_name; return_type; postconditions; 
-        opens; range;_} -> return_name
+    | { tag; precondition; return_name; return_type; postcondition; range;_}
+        -> return_name
 let (__proj__Mkcomputation_type__item__return_type :
   computation_type -> FStar_Parser_AST.term) =
   fun projectee ->
     match projectee with
-    | { tag; preconditions; return_name; return_type; postconditions; 
-        opens; range;_} -> return_type
-let (__proj__Mkcomputation_type__item__postconditions :
-  computation_type -> vprop Prims.list) =
+    | { tag; precondition; return_name; return_type; postcondition; range;_}
+        -> return_type
+let (__proj__Mkcomputation_type__item__postcondition :
+  computation_type -> vprop) =
   fun projectee ->
     match projectee with
-    | { tag; preconditions; return_name; return_type; postconditions; 
-        opens; range;_} -> postconditions
-let (__proj__Mkcomputation_type__item__opens :
-  computation_type -> FStar_Parser_AST.term Prims.list) =
-  fun projectee ->
-    match projectee with
-    | { tag; preconditions; return_name; return_type; postconditions; 
-        opens; range;_} -> opens
+    | { tag; precondition; return_name; return_type; postcondition; range;_}
+        -> postcondition
 let (__proj__Mkcomputation_type__item__range : computation_type -> rng) =
   fun projectee ->
     match projectee with
-    | { tag; preconditions; return_name; return_type; postconditions; 
-        opens; range;_} -> range
+    | { tag; precondition; return_name; return_type; postcondition; range;_}
+        -> range
 type mut_or_ref =
   | MUT 
   | REF 
@@ -502,28 +498,24 @@ let (__proj__Mkdecl__item__range : decl -> rng) =
         range2 = range;_} -> range
 let (mk_comp :
   st_comp_tag ->
-    vprop Prims.list ->
+    vprop ->
       FStar_Ident.ident ->
-        FStar_Parser_AST.term ->
-          vprop Prims.list ->
-            FStar_Parser_AST.term Prims.list -> rng -> computation_type)
+        FStar_Parser_AST.term -> vprop -> rng -> computation_type)
   =
   fun tag ->
-    fun preconditions ->
+    fun precondition ->
       fun return_name ->
         fun return_type ->
-          fun postconditions ->
-            fun opens ->
-              fun range ->
-                {
-                  tag;
-                  preconditions;
-                  return_name;
-                  return_type;
-                  postconditions;
-                  opens;
-                  range
-                }
+          fun postcondition ->
+            fun range ->
+              {
+                tag;
+                precondition;
+                return_name;
+                return_type;
+                postcondition;
+                range
+              }
 let (mk_vprop_exists : binders -> vprop -> vprop') =
   fun binders1 -> fun body -> VPropExists { binders = binders1; body }
 let (mk_expr : FStar_Parser_AST.term -> stmt') = fun e -> Expr { e }

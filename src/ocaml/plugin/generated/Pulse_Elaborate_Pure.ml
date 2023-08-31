@@ -105,13 +105,6 @@ let rec (elab_term : Pulse_Syntax_Base.term -> FStar_Reflection_Types.term) =
                 (FStar_Reflection_V2_Builtins.pack_fv
                    Pulse_Reflection_Util.inames_lid)))
     | Pulse_Syntax_Base.Tm_EmpInames -> w Pulse_Reflection_Util.emp_inames_tm
-    | Pulse_Syntax_Base.Tm_AddInv (i, is) ->
-        let i1 = elab_term i in
-        let is1 = elab_term is in
-        w
-          (Pulse_Reflection_Util.add_inv_tm
-             (FStar_Reflection_V2_Builtins.pack_ln
-                FStar_Reflection_V2_Data.Tv_Unknown) i1 is1)
     | Pulse_Syntax_Base.Tm_Unknown ->
         w
           (FStar_Reflection_V2_Builtins.pack_ln
