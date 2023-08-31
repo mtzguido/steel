@@ -87,15 +87,8 @@ let vprop_equiv_ext p1 p2 _ = equiv_refl p1
 (* Invariants, just reexport *)
 let iname = iname
 
-let join_sub _ _ = ()
-let join_emp is =
-  Set.lemma_equal_intro (join_inames is emp_inames) is;
-  Set.lemma_equal_intro (join_inames emp_inames is) is
-
 let inv = inv
 let name_of_inv = name_of_inv
-
-let add_already_there i is = Set.lemma_equal_intro (add_inv is i) is
 
 inline_for_extraction
 type stt (a:Type u#a) (pre:vprop) (post:a -> vprop) = unit -> STT a pre post
@@ -120,6 +113,9 @@ let s_minus_s (#a:eqtype) (s : Set.set a)
   = Set.lemma_equal_intro (set_sub s s) Set.empty
 
 (** / Set lemmas **)
+
+let inames_sub (s1 s2 : inames) : inames =
+  set_sub s1 s2
 
 inline_for_extraction
 type stt_unobservable (a:Type u#a) (opens:inames) (pre:vprop) (post:a -> vprop) =
@@ -271,10 +267,6 @@ let sub_stt_atomic #a #opened #pre1 pre2 #post1 post2 pf1 pf2 e =
   Steel.ST.Util.return x
 
 inline_for_extraction
-let sub_invs_stt_atomic #a #opens1 #opens2 #pre #post e pf = 
-  e
-
-inline_for_extraction
 let sub_stt_ghost #a #opened #pre1 pre2 #post1 post2 pf1 pf2 e =
   fun _ ->
   rewrite_equiv pre2 pre1;
@@ -285,10 +277,6 @@ let sub_stt_ghost #a #opened #pre1 pre2 #post1 post2 pf1 pf2 e =
   in
   rewrite_equiv (post1 x) (post2 x);
   x
-
-inline_for_extraction
-let sub_invs_stt_ghost #a #opens1 #opens2 #pre #post e pf = 
-  e
 
 (* odd workaround for definition below *)
 let thunk #a #r #opens #pre (#post : (x:a -> r x -> vprop))

@@ -72,25 +72,15 @@ peekFnId:
       { FStar_Ident.string_of_id id }
 
 qual:
-  | GHOST { PulseSugar.STGhost }
-  | ATOMIC { PulseSugar.STAtomic }
+  | GHOST { PulseSugar.STGhost (unit_const (rr $loc)) }
+  | ATOMIC { PulseSugar.STAtomic (unit_const (rr $loc)) }
 
 /* This is the main entry point for the pulse parser */
 pulseDecl:
-  | q=option(qual) f=FN lid=lident bs=nonempty_list(pulseMultiBinder) comp_ascriptions=compAscriptions LBRACE body=pulseStmt RBRACE
+  | q=option(qual) FN lid=lident bs=nonempty_list(pulseMultiBinder) ascription=pulseComputationType LBRACE body=pulseStmt RBRACE
     {
-      let tag = dflt PulseSugar.ST q in
-      let ( preconditions, returns_, postconditions, opens ) = comp_ascriptions in
-      (* FIXME this is stupid *)
-      let return_name, return_type =
-        match returns_ with
-        | [x] -> x
-        | [] -> default_return
-      in
-      let c : PulseSugar.computation_type =
-                PulseSugar.mk_comp tag preconditions return_name return_type postconditions opens (rr2 $loc(f) $loc(comp_ascriptions))
-      in
-      PulseSugar.mk_decl lid (List.flatten bs) c body (rr $loc)
+      let ascription = with_computation_tag ascription q in
+      PulseSugar.mk_decl lid (List.flatten bs) ascription body (rr $loc)
     }
 
 pulseMultiBinder:
@@ -99,21 +89,19 @@ pulseMultiBinder:
   | q=option(HASH) id=lidentOrUnderscore
     { [(as_aqual q, id, mk_term Wild (rr ($loc(id))) Un)] }
 
-compAscriptions:
-  | l=list(compAscription)
+pulseComputationType:
+  | REQUIRES t=pulseVprop
+    ret=option(RETURNS i=lidentOrUnderscore COLON r=term { (i, r) })
+    ENSURES t2=pulseVprop
     {
-      fold_right (fun (a,b,c,d) (aa,bb,cc,dd) -> (a@aa, b@bb, c@cc, d@dd)) l ([],[],[],[])
+        let i, r =
+          match ret with
+          | Some (i, r) -> i, r
+          | None -> default_return
+        in
+        PulseSugar.mk_comp ST t i r t2 (rr $loc)
     }
 
-compAscription:
-  | REQUIRES t=pulseVprop   { ([t], [],  [], []) }
-
-  | RETURNS i=lidentOrUnderscore COLON r=term 
-     { ([], [(i, r)], [], []) }
-     (* ^ FIXME: make binding optional *)
-
-  | ENSURES  t=pulseVprop   { ([],  [],  [t], []) }
-  | OPENS    inv=atomicTerm { ([],  [],  [], [inv]) }
 
 pulseStmtNoSeq:
   | OPEN i=quident

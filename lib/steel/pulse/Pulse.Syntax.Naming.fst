@@ -37,10 +37,6 @@ let rec close_open_inverse' (t:term)
     | Tm_FStar t ->
       RT.close_open_inverse' i t x
 
-    | Tm_AddInv n is ->
-      close_open_inverse' n  x i;
-      close_open_inverse' is x i
-
 let close_open_inverse_comp' (c:comp)
                              (x:var { ~(x `Set.mem` freevars_comp c) } )
                              (i:index)
@@ -199,9 +195,6 @@ let rec open_with_gt_ln (e:term) (i:int) (t:term) (j:nat)
     open_with_gt_ln t1.binder_ty i t j;
     open_with_gt_ln body (i + 1) t (j + 1)
   | Tm_FStar _ -> admit()
-  | Tm_AddInv e1 e2 ->
-    open_with_gt_ln e1 i t j;
-    open_with_gt_ln e2 i t j
 
 let open_with_gt_ln_st (s:st_comp) (i:int) (t:term) (j:nat)
   : Lemma (requires ln_st_comp s i /\ i < j)
@@ -244,9 +237,6 @@ let rec close_with_non_freevar (e:term) (x:var) (i:nat)
     close_with_non_freevar t1.binder_ty x i;
     close_with_non_freevar body x (i + 1)
   | Tm_FStar _ -> admit()
-  | Tm_AddInv t1 t2 ->
-    close_with_non_freevar t1 x i;
-    close_with_non_freevar t2 x i
 
 let close_with_non_freevar_st (s:st_comp) (x:var) (i:nat)
   : Lemma

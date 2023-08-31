@@ -29,7 +29,6 @@ let rec freevars (t:term)
       Set.union (freevars t1.binder_ty) (freevars t2)
     | Tm_Pure p -> freevars p
     | Tm_FStar t -> RT.freevars t
-    | Tm_AddInv i is -> Set.union (freevars i) (freevars is)
 
 let freevars_st_comp (s:st_comp) : Set.set var =
   freevars s.res `Set.union`
@@ -155,11 +154,6 @@ let rec ln' (t:term) (i:int) : Tot bool (decreases t) =
     
   | Tm_FStar t ->
     RT.ln' t i
-
-  | Tm_AddInv x is ->
-    ln' x i &&
-    ln' is i
-
 
 let ln_st_comp (s:st_comp) (i:int) : bool =
   ln' s.res i &&
@@ -341,10 +335,6 @@ let rec subst_term (t:term) (ss:subst)
     | Tm_FStar t ->
       open_or_close_host_term t ss;
       w (Tm_FStar (RT.subst_term t (rt_subst ss)))
-
-    | Tm_AddInv i is ->
-      w (Tm_AddInv (subst_term i ss)
-                   (subst_term is ss))
 
 let open_term' (t:term) (v:term) (i:index) =
   subst_term t [ DT i v ]

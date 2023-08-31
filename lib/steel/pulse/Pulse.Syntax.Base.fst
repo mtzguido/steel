@@ -35,8 +35,6 @@ let rec eq_tm (t1 t2:term)
       assume (faithful t1);
       assume (faithful t2);
       term_eq_dec t1 t2
-    | Tm_AddInv i1 is1, Tm_AddInv i2 is2 ->
-      eq_tm i1 i2 && eq_tm is1 is2
     | _ -> false
 
 let eq_st_comp (s1 s2:st_comp)  

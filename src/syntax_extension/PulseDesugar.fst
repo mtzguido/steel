@@ -579,44 +579,23 @@ and desugar_binders (env:env_t) (bs:Sugar.binders)
     let? env, bs, bvs = aux env bs in
     return (env, L.map (fun (aq, b, t) -> aq, SW.mk_binder b t) bs, bvs)
 
-let rec fold_right1 (f : 'a -> 'a -> 'a) (l : list 'a) : 'a =
-  match l with
-  | [h] -> h
-  | h::t -> f h (fold_right1 f t)
-
-let desugar_computation_type (env:env_t) (c:Sugar.computation_type)
+and desugar_computation_type (env:env_t) (c:Sugar.computation_type)
   : err SW.comp
-  = let? pres = map_err (desugar_vprop env) c.preconditions in
-    let pre = fold_right1 (fun a b -> SW.tm_star a b c.range) pres in
-
+  = let? pre = desugar_vprop env c.precondition in
     let? ret = desugar_term env c.return_type in
-
-    let? opens = match c.opens with
-                | [] -> return SW.tm_emp_inames
-                | [i] -> desugar_term env i
-                | _ -> fail "only one opens supported" c.range
-    in
-
-    (* Should have return_name in scope I think *)
-    // let? openss = map_err (desugar_term env) c.opens in
-    // let opens = L.fold_right (fun i is -> SW.tm_add_inv i is c.range) openss SW.tm_emp_inames in
-
     let env1, bv = push_bv env c.return_name in
-    let? posts = map_err (desugar_vprop env1) c.postconditions in
-    let post = fold_right1 (fun a b -> SW.tm_star a b c.range) posts in
+    let? post = desugar_vprop env1 c.postcondition in
     let post = SW.close_term post bv.index in
-
     match c.tag with
-    | Sugar.ST ->
-      if c.opens <> [] then
-        fail "STT computations need not (and must not) be indexed by invariants, either remove the opens or make this function ghost/atomic"
-             (L.hd c.opens).range
-      else return ();?
-      return SW.(mk_comp pre (mk_binder c.return_name ret) post)
-    | Sugar.STAtomic ->
-      return SW.(atomic_comp opens pre (mk_binder c.return_name ret) post)
-    | Sugar.STGhost ->
-      return SW.(ghost_comp opens pre (mk_binder c.return_name ret) post)
+    | Sugar.ST -> return SW.(mk_comp pre (mk_binder c.return_name ret) post)
+    | Sugar.STAtomic _ -> // For now, we only support empty inames ->
+      // let? inames = desugar_term env inames in
+      let inames = SW.tm_emp_inames in
+      return SW.(atomic_comp inames pre (mk_binder c.return_name ret) post)
+    | Sugar.STGhost _ -> // For now, we only support empty inames ->
+      // let? inames = desugar_term env inames in
+      let inames = SW.tm_emp_inames in
+      return SW.(ghost_comp inames pre (mk_binder c.return_name ret) post)      
 
 let rec free_vars_term (env:env_t) (t:A.term) =
   ToSyntax.free_vars false env.tcenv.dsenv t
@@ -639,15 +618,12 @@ and free_vars_binders (env:env_t) (bs:Sugar.binders)
       let env', res = free_vars_binders (fst (push_bv env x)) bs in
       env', fvs@res
 
-and free_vars_list (#a:Type0) (f : env_t -> a -> list ident) (env:env_t) (xs : list a) : list ident =
-  L.collect (f env) xs
-
 let free_vars_comp (env:env_t) (c:Sugar.computation_type)
   : list ident
   = let ids =
-        free_vars_list free_vars_vprop env c.preconditions @
+        free_vars_vprop env c.precondition @
         free_vars_term env c.return_type @
-        free_vars_list free_vars_vprop (fst (push_bv env c.return_name)) c.postconditions
+        free_vars_vprop (fst (push_bv env c.return_name)) c.postcondition
     in
     L.deduplicate Ident.ident_equals ids
 
@@ -714,12 +690,12 @@ let fresh_var (nm:ident)
 
 let bind_curval (m:menv) (x:ident) (curval:ident) = 
   match L.tryFind (fun (y, _, _) -> Ident.ident_equals x y) m.map with
-  | None -> failwith "Impossible 1"
+  | None -> failwith "Impossible"
   | Some (x, bv, _) -> { m with map=(x, bv, Some curval)::m.map }
 
 let clear_curval (m:menv) (x:ident) =
   match L.tryFind (fun (y, _, _) -> Ident.ident_equals x y) m.map with
-  | None -> failwith "Impossible 2"
+  | None -> failwith "Impossible"
   | Some (x, bv, _) -> { m with map=(x, bv, None)::m.map }
 
 let bind_curvals (m:menv) (l:needs_derefs) = 

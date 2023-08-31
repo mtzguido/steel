@@ -72,18 +72,6 @@ let inames = erased (FStar.Set.set iname)
 // val emp_inames : inames
 let emp_inames : inames = Ghost.hide Set.empty
 
-let join_inames (is1 is2 : inames) : inames = Set.union is1 is2
-
-let inames_subset (is1 is2 : inames) : Type0 = Set.subset is1 is2
-
-val join_sub (is1 is2 : inames)
-  : Lemma (is1 `inames_subset` join_inames is1 is2 /\
-          is2 `inames_subset` join_inames is1 is2)
-
-val join_emp (is : inames)
-  : Lemma (join_inames is emp_inames == is /\ join_inames emp_inames is == is)
-          [SMTPatOr [[SMTPat (join_inames is emp_inames)]; [SMTPat (join_inames emp_inames is)]]]
-
 // val all_inames : inames
 let all_inames : inames = Ghost.hide (Set.complement Set.empty)
 
@@ -94,13 +82,6 @@ we run into tons of pain when trying to define the operations. *)
 val name_of_inv #p (i : inv p) : GTot iname
 let mem_inv (#p:vprop) (e:inames) (i:inv p) : erased bool = elift2 (fun e i -> Set.mem i e) e (name_of_inv i)
 let add_inv (#p:vprop) (e:inames) (i:inv p) : inames = Set.union (Set.singleton (name_of_inv i)) (reveal e)
-
-(* Useful for reasoning about inames equalities. TODO: We need a decent
-set of patterns. *)
-val add_already_there #p (i : inv p) (is : inames)
-  : Lemma (requires Set.mem (name_of_inv i) is)
-          (ensures add_inv is i == is)
-          [SMTPat (add_inv is i)]
 
 (* stt a pre post: The type of a pulse computation
    that when run in a state satisfying `pre`
@@ -263,16 +244,6 @@ val sub_stt_atomic
   : stt_atomic a opens pre2 post2
 
 inline_for_extraction
-val sub_invs_stt_atomic
-  (#a:Type u#a)
-  (#opens1 #opens2:inames)
-  (#pre:vprop)
-  (#post:a -> vprop)
-  (e:stt_atomic a opens1 pre post)
-  (_ : squash (inames_subset opens1 opens2))
-  : stt_atomic a opens1 pre post
-
-inline_for_extraction
 val sub_stt_ghost
   (#a:Type u#a)
   (#opens:inames)
@@ -284,16 +255,6 @@ val sub_stt_ghost
   (pf2 : vprop_post_equiv post1 post2)
   (e:stt_ghost a opens pre1 post1)
   : stt_ghost a opens pre2 post2
-
-inline_for_extraction
-val sub_invs_stt_ghost
-  (#a:Type u#a)
-  (#opens1 #opens2:inames)
-  (#pre:vprop)
-  (#post:a -> vprop)
-  (e:stt_ghost a opens1 pre post)
-  (_ : squash (inames_subset opens1 opens2))
-  : stt_ghost a opens1 pre post
 
 inline_for_extraction
 val return_stt_unobservable (#a:Type u#a) #opened (x:a) (p:a -> vprop)
@@ -420,5 +381,3 @@ val drop_ (p:vprop)
 
 val elim_false (a:Type) (p:a -> vprop)
   : stt_ghost a emp_inames (pure False) p
-
-let eq2_prop (#a:Type) (x:a) (y:a) : prop = x == y

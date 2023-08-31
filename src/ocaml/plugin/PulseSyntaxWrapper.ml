@@ -59,7 +59,6 @@ let tm_arrow (b:binder) (q:S.aqual) (body:comp) : term =
 let tm_expr (t:S.term) r : term = wr r (Tm_FStar t)
 let tm_unknown r : term = wr r Tm_Unknown
 let tm_emp_inames :term = wr FStar_Range.range_0 Tm_EmpInames
-let tm_add_inv i is r : term = wr r (Tm_AddInv (i, is))
 
 let mk_tot (t:term) : comp = C_Tot t
 

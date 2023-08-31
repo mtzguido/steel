@@ -561,23 +561,6 @@ type st_comp_typing : env -> st_comp -> Type =
       tot_typing (push_binding g x ppname_default st.res) (open_term st.post x) tm_vprop ->
       st_comp_typing g st
 
-// TODO: move
-let tm_join_inames (inames1 inames2 : term) : term =
-  let inames1 = elab_term inames1 in
-  let inames2 = elab_term inames2 in
-  let join_lid = Pulse.Reflection.Util.mk_pulse_lib_core_lid "join_inames" in
-  let join : R.term = R.pack_ln (R.Tv_FVar (R.pack_fv join_lid)) in
-  with_range (Tm_FStar (R.mk_e_app join [inames1; inames2]))
-             (T.range_of_term inames1)
-  
-let tm_inames_subset (inames1 inames2 : term) : term =
-  let inames1 = elab_term inames1 in
-  let inames2 = elab_term inames2 in
-  let join_lid = Pulse.Reflection.Util.mk_pulse_lib_core_lid "inames_subset" in
-  let join : R.term = R.pack_ln (R.Tv_FVar (R.pack_fv join_lid)) in
-  with_range (Tm_FStar (R.mk_e_app join [inames1; inames2]))
-             (T.range_of_term inames1)
-
 let tr_binding (vt : var & typ) : Tot R.binding =
   let v, t = vt in
   { 
@@ -911,16 +894,6 @@ type st_typing : env -> st_term -> comp -> Type =
       c : comp_st ->
       body_typing : st_typing g body (add_frame c inv_vprop) ->
       st_typing g (wr (Tm_WithInv {name=inv_tm; body; returns_inv=None})) c
-
-    | T_SubInvsGhost:
-      g:env ->
-      body : st_term ->
-      inames1:term ->
-      inames2:term ->
-      c : st_comp ->
-      prop_validity g (tm_inames_subset inames1 inames2) ->
-      st_typing g body (C_STGhost inames1 c) ->
-      st_typing g body (C_STGhost inames2 c)
 
 and pats_complete : env -> term -> typ -> list R.pattern -> Type0 =
   // just check the elaborated term with the core tc

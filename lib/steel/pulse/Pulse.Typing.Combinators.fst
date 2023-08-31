@@ -91,6 +91,7 @@ let rec vprop_equiv_typing (#g:_) (#t0 #t1:term) (v:vprop_equiv g t0 t1)
       (fun _ -> d2),
       (fun _ -> d1)
 
+
 #push-options "--z3rlimit_factor 8 --ifuel 1 --fuel 2 --query_stats"
 let rec mk_bind (g:env)
                 (pre:term)
@@ -123,21 +124,13 @@ let rec mk_bind (g:env)
   | C_ST _, C_ST _ ->
     let bc = Bind_comp g x c1 c2 res_typing x post_typing in
     (| _, _, T_Bind _ e1 e2 _ _ b _ _ d_e1 d_c1res d_e2 bc |)
-  | C_STGhost inames1 sc1, C_STGhost inames2 sc2 ->
+  | C_STGhost inames1 _, C_STGhost inames2 _ ->
     if eq_tm inames1 inames2
     then begin
       let bc = Bind_comp g x c1 c2 res_typing x post_typing in
       (| _, _, T_Bind _ e1 e2 _ _ b _ _ d_e1 d_c1res d_e2 bc |)
-    end else begin
-      let new_inames = tm_join_inames inames1 inames2 in
-      let d_e1 = T_SubInvsGhost _ _ inames1 new_inames sc1 (check_prop_validity _ _ (magic())) d_e1 in
-      let d_e2 = T_SubInvsGhost _ _ inames2 new_inames sc2 (check_prop_validity _ _ (magic())) d_e2 in
-      let c1 = C_STGhost new_inames sc1 in
-      let c2 = C_STGhost new_inames sc2 in
-      let bc = Bind_comp g x c1 c2 res_typing x post_typing in
-      (| _, _, T_Bind _ e1 e2 _ _ b _ _ d_e1 d_c1res d_e2 bc |)
-      // fail g None "Cannot compose two stghost computations with different opened invariants"
     end
+    else fail g None "Cannot compose two stghost computations with different opened invariants"
   | C_STAtomic inames _, C_ST _ ->
     if eq_tm inames tm_emp_inames
     then begin

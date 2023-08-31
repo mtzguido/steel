@@ -85,25 +85,14 @@ let check_effect_annotation g r (c_annot c_computed:comp) =
   match c_annot, c_computed with
   | C_Tot _, C_Tot _ -> ()
   | C_ST _, C_ST _ -> ()
-  | C_STAtomic i c1, C_STAtomic j c2
-  | C_STGhost i c1, C_STGhost j c2 ->
-    (* if eq_tm i j *)
-    let b = mk_binder "res" Range.range_0 c2.res in
-    // let phi =
-    //   mk_forall c.u c.res
-    //    mk_sq_eq2 u_zero (tm_arrow b None (C_Tot tm_inames))
-    //                    (tm_pureabs (Sealed.seal "res") c1.res None i)
-    //                    (tm_pureabs (Sealed.seal "res") c2.res None j)
-    // in
-    // let (| phi, typing |) = check_term_with_expected_type_and_effect g phi T.E_Total tm_prop in
-    // if
-    // let _ = T.with_policy T.SMTSync (fun () -> check_prop_validity g phi typing) in
-    ()
-    // then ()
-    // else fail g (Some i.range)
-    //             (Printf.sprintf "Annotated effect expects only invariants in %s to be opened; but computed effect claims that invariants %s are opened"
-    //               (P.term_to_string i)
-    //               (P.term_to_string j))
+  | C_STAtomic i _, C_STAtomic j _
+  | C_STGhost i _, C_STGhost j _ ->
+    if eq_tm i j
+    then ()
+    else fail g (Some i.range)
+                (Printf.sprintf "Annotated effect expects only invariants in %s to be opened; but computed effect claims that invariants %s are opened"
+                  (P.term_to_string i)
+                  (P.term_to_string j))
   | _, _ ->
     fail g (Some r)
            (Printf.sprintf "Expected effect %s but this function body has effect %s"
@@ -132,8 +121,7 @@ let rec check_abs_core
     match body_opened.term with
     | Tm_Abs _ ->
       let (| body, c_body, body_typing |) = check_abs_core g' body_opened check in
-      //check_effect_annotation g' body.range c c_body;
-      // FIXME: how can I just comments this out?
+      check_effect_annotation g' body.range c c_body;
       FV.st_typing_freevars body_typing;
       let body_closed = close_st_term body x in
       assume (open_st_term body_closed x == body);
