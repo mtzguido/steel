@@ -2,6 +2,7 @@ module PulseSugar
 open FStar.Ident
 module A = FStar.Parser.AST
 let rng = FStar.Compiler.Range.range
+let dummyRange = FStar.Compiler.Range.dummyRange
 
 type binder = A.aqual & ident & A.term
 
@@ -23,15 +24,16 @@ let as_vprop (v:vprop') (r:rng) = { v; vrange=r}
 
 type st_comp_tag = 
   | ST
-  | STAtomic of A.term
-  | STGhost of A.term
+  | STAtomic
+  | STGhost
 
 type computation_type = {
      tag: st_comp_tag;
-     precondition:vprop;
+     preconditions:list vprop;
      return_name:ident;
      return_type:A.term;
-     postcondition: vprop;
+     postconditions: list vprop;
+     opens:list A.term;
      range:rng
 }
 
@@ -148,15 +150,15 @@ type decl = {
   range:rng
 }
 
-
-(* Convenience builders for use from OCaml/Menhir, since field names get mangled in OCaml *)
-let mk_comp tag precondition return_name return_type postcondition range = 
+(* Convenience builders for use from OCaml/Menhir, since field names get mangled in OCaml. *)
+let mk_comp tag preconditions return_name return_type postconditions opens range =
   {
      tag;
-     precondition;
+     preconditions;
      return_name;
      return_type;
-     postcondition;
+     postconditions;
+     opens;
      range
   }
 

@@ -83,6 +83,7 @@ type term' =
   | Tm_Inv        : vprop -> term'
   | Tm_Inames     : term'  // type inames
   | Tm_EmpInames  : term'
+  | Tm_AddInv     : term -> term -> term'
   | Tm_FStar      : host_term -> term'
   | Tm_Unknown    : term'
 
@@ -126,8 +127,8 @@ noeq
 type comp =
   | C_Tot      : term -> comp
   | C_ST       : st_comp -> comp
-  | C_STAtomic : term -> st_comp -> comp  // inames
-  | C_STGhost  : term -> st_comp -> comp  // inames
+  | C_STAtomic : inames:term -> st_comp -> comp
+  | C_STGhost  : inames:term -> st_comp -> comp
 
 
 let comp_st = c:comp {not (C_Tot? c) }

@@ -389,6 +389,8 @@ let rec soundness (g:stt_env)
     | T_Admit _ _ _ _ -> Admit.admit_soundess d
 
     | T_WithInv _ _ _ _ _ _ _ _ -> magic() // IOU
+
+    | T_SubInvsGhost _ _ _ _ _ _ _ -> magic()
 #pop-options
 
 let soundness_lemma

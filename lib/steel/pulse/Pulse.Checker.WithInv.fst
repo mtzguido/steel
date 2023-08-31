@@ -129,11 +129,20 @@ let check
     (Printf.sprintf "Checked body at comp type %s"
         (P.comp_to_string c_body));
 
+  let add_iname (inames:term) (i:term) : T.Tac term =
+    let a = elab_term inames in
+    let b = elab_term i in
+    let inv_p = elab_term inv_p in
+    with_range (Tm_FStar (Pulse.Reflection.Util.add_inv_tm inv_p a b)) (T.range_of_term a)
+  in
+
   let c_out : comp_st =
     match c_body with
-    | C_ST st -> C_ST (st_comp_remove_inv inv_p st)
-    | C_STAtomic inames st -> C_STAtomic inames (st_comp_remove_inv inv_p st)
-    | C_STGhost inames st -> C_STGhost inames (st_comp_remove_inv inv_p st)
+    | C_ST st -> 
+      fail g (Some body.range)
+        (Printf.sprintf "This computation is not atomic nor ghost. `with_invariants` blocks can only contain ghost or atomic computations")
+    | C_STAtomic inames st -> C_STAtomic (add_iname inames inv_tm) (st_comp_remove_inv inv_p st)
+    | C_STGhost inames st -> C_STGhost (add_iname inames inv_tm) (st_comp_remove_inv inv_p st)
   in
   assume (add_inv c_out inv_p == c_body);
 

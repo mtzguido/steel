@@ -58,6 +58,11 @@ let rec elab_term (top:term)
     | Tm_EmpInames ->
       w (emp_inames_tm)
 
+    | Tm_AddInv i is ->
+      let i = elab_term i in
+      let is = elab_term is in
+      w (add_inv_tm (`_) i is)
+
     | Tm_Unknown ->
       w (pack_ln R.Tv_Unknown)
 

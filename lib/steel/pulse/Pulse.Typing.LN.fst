@@ -49,6 +49,7 @@ let rec open_term_ln' (e:term)
     | Tm_Pure p ->
       open_term_ln' p x i
 
+    | Tm_AddInv l r
     | Tm_Star l r ->
       open_term_ln' l x i;
       open_term_ln' r x i
@@ -259,6 +260,7 @@ let rec ln_weakening (e:term) (i j:int)
       ln_weakening p i j
       
     // | Tm_PureApp l _ r
+    | Tm_AddInv l r
     | Tm_Star l r ->
       ln_weakening l i j;
       ln_weakening r i j
@@ -418,6 +420,7 @@ let rec open_term_ln_inv' (e:term)
       open_term_ln_inv' p x i
 
     // | Tm_PureApp l _ r
+    | Tm_AddInv l r
     | Tm_Star l r ->
       open_term_ln_inv' l x i;
       open_term_ln_inv' r x i
@@ -587,6 +590,7 @@ let rec close_term_ln' (e:term)
     | Tm_Pure p ->
       close_term_ln' p x i
 
+    | Tm_AddInv l r
     | Tm_Star l r ->
       close_term_ln' l x i;
       close_term_ln' r x i
@@ -986,4 +990,10 @@ let rec st_typing_ln (#g:_) (#t:_) (#c:_)
 
     | T_WithInv _ _ _ _ _ _ _ _ ->
       admit() // IOU
+
+    | T_SubInvsGhost _ _ _ inames2 _ _ d ->
+      st_typing_ln d;
+      assume (ln inames2);
+     // FIXME: get this from inversion, or add it to the rule
+     ()
 #pop-options

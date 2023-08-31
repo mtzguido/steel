@@ -82,6 +82,7 @@ let rec term_to_string' (level:string) (t:term)
     | Tm_VProp -> "vprop"
     | Tm_Inames -> "inames"
     | Tm_EmpInames -> "emp_inames"
+    | Tm_AddInv i is -> sprintf "(add_inv %s %s)" (term_to_string' level i) (term_to_string' level is)
     | Tm_Unknown -> "_"
     | Tm_FStar t ->
       T.term_to_string t
@@ -294,6 +295,7 @@ let tag_of_term (t:term) =
   | Tm_ForallSL _ _ _ -> "Tm_ForallSL"
   | Tm_VProp -> "Tm_VProp"
   | Tm_Inames -> "Tm_Inames"
+  | Tm_AddInv _ _ -> "Tm_AddInv"
   | Tm_EmpInames -> "Tm_EmpInames"
   | Tm_Unknown -> "Tm_Unknown"
   | Tm_FStar _ -> "Tm_FStar"
