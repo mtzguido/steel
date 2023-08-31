@@ -62,6 +62,7 @@ type term' =
   | Tm_Inv of term 
   | Tm_Inames 
   | Tm_EmpInames 
+  | Tm_AddInv of term * term 
   | Tm_FStar of host_term 
   | Tm_Unknown 
 and binder = {
@@ -84,6 +85,8 @@ let uu___is_Tm_Inames uu___ =
   match uu___ with | Tm_Inames _ -> true | _ -> false
 let uu___is_Tm_EmpInames uu___ =
   match uu___ with | Tm_EmpInames _ -> true | _ -> false
+let uu___is_Tm_AddInv uu___ =
+  match uu___ with | Tm_AddInv _ -> true | _ -> false
 let uu___is_Tm_FStar uu___ =
   match uu___ with | Tm_FStar _ -> true | _ -> false
 let uu___is_Tm_Unknown uu___ =
@@ -157,18 +160,18 @@ let (__proj__C_ST__item___0 : comp -> st_comp) =
   fun projectee -> match projectee with | C_ST _0 -> _0
 let (uu___is_C_STAtomic : comp -> Prims.bool) =
   fun projectee ->
-    match projectee with | C_STAtomic (_0, _1) -> true | uu___ -> false
-let (__proj__C_STAtomic__item___0 : comp -> term) =
-  fun projectee -> match projectee with | C_STAtomic (_0, _1) -> _0
+    match projectee with | C_STAtomic (inames, _1) -> true | uu___ -> false
+let (__proj__C_STAtomic__item__inames : comp -> term) =
+  fun projectee -> match projectee with | C_STAtomic (inames, _1) -> inames
 let (__proj__C_STAtomic__item___1 : comp -> st_comp) =
-  fun projectee -> match projectee with | C_STAtomic (_0, _1) -> _1
+  fun projectee -> match projectee with | C_STAtomic (inames, _1) -> _1
 let (uu___is_C_STGhost : comp -> Prims.bool) =
   fun projectee ->
-    match projectee with | C_STGhost (_0, _1) -> true | uu___ -> false
-let (__proj__C_STGhost__item___0 : comp -> term) =
-  fun projectee -> match projectee with | C_STGhost (_0, _1) -> _0
+    match projectee with | C_STGhost (inames, _1) -> true | uu___ -> false
+let (__proj__C_STGhost__item__inames : comp -> term) =
+  fun projectee -> match projectee with | C_STGhost (inames, _1) -> inames
 let (__proj__C_STGhost__item___1 : comp -> st_comp) =
-  fun projectee -> match projectee with | C_STGhost (_0, _1) -> _1
+  fun projectee -> match projectee with | C_STGhost (inames, _1) -> _1
 type comp_st = comp
 type pattern =
   | Pat_Cons of fv * (pattern * Prims.bool) Prims.list 
@@ -401,6 +404,8 @@ let rec (eq_tm : term -> term -> Prims.bool) =
             (eq_tm b1 b2)
       | (Tm_FStar t11, Tm_FStar t21) ->
           FStar_Reflection_V2_TermEq.term_eq_dec t11 t21
+      | (Tm_AddInv (i1, is1), Tm_AddInv (i2, is2)) ->
+          (eq_tm i1 i2) && (eq_tm is1 is2)
       | uu___ -> false
 let (eq_st_comp : st_comp -> st_comp -> Prims.bool) =
   fun s1 ->

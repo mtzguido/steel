@@ -530,6 +530,22 @@ let rec (elab_st_typing :
                 (FStar_Reflection_V2_Data.Tv_Const
                    (FStar_Reflection_V2_Data.C_String
                       "IOU: elab_st_typing of T_WithInv"))
+          | Pulse_Typing.T_SubInvsGhost (uu___, uu___1, i1, i2, c1, pf, d1)
+              ->
+              let cc =
+                elab_st_typing uu___ uu___1
+                  (Pulse_Syntax_Base.C_STGhost (i1, c1)) d1 in
+              let rpre =
+                Pulse_Elaborate_Pure.elab_term c1.Pulse_Syntax_Base.pre in
+              let rret_t =
+                Pulse_Elaborate_Pure.elab_term c1.Pulse_Syntax_Base.res in
+              let rpost =
+                Pulse_Reflection_Util.mk_abs rret_t
+                  FStar_Reflection_V2_Data.Q_Explicit
+                  (Pulse_Elaborate_Pure.elab_term c1.Pulse_Syntax_Base.post) in
+              Pulse_Reflection_Util.mk_sub_inv_ghost c1.Pulse_Syntax_Base.u
+                rret_t (Pulse_Elaborate_Pure.elab_term i1)
+                (Pulse_Elaborate_Pure.elab_term i2) rpre rpost cc
 and (elab_br :
   Pulse_Typing_Env.env ->
     Pulse_Syntax_Base.comp_st ->

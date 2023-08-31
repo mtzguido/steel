@@ -19,6 +19,8 @@ let rec (freevars :
           (freevars t2)
     | Pulse_Syntax_Base.Tm_Pure p -> freevars p
     | Pulse_Syntax_Base.Tm_FStar t1 -> FStar_Reflection_Typing.freevars t1
+    | Pulse_Syntax_Base.Tm_AddInv (i, is) ->
+        FStar_Set.union (freevars i) (freevars is)
 let (freevars_st_comp :
   Pulse_Syntax_Base.st_comp -> Pulse_Syntax_Base.var FStar_Set.set) =
   fun s ->
@@ -184,6 +186,7 @@ let rec (ln' : Pulse_Syntax_Base.term -> Prims.int -> Prims.bool) =
           (ln' t1.Pulse_Syntax_Base.binder_ty i) &&
             (ln' body (i + Prims.int_one))
       | Pulse_Syntax_Base.Tm_FStar t1 -> FStar_Reflection_Typing.ln' t1 i
+      | Pulse_Syntax_Base.Tm_AddInv (x, is) -> (ln' x i) && (ln' is i)
 let (ln_st_comp : Pulse_Syntax_Base.st_comp -> Prims.int -> Prims.bool) =
   fun s ->
     fun i ->
@@ -432,6 +435,10 @@ let rec (subst_term :
           w
             (Pulse_Syntax_Base.Tm_FStar
                (FStar_Reflection_Typing.subst_term t1 (rt_subst ss)))
+      | Pulse_Syntax_Base.Tm_AddInv (i, is) ->
+          w
+            (Pulse_Syntax_Base.Tm_AddInv
+               ((subst_term i ss), (subst_term is ss)))
 let (open_term' :
   Pulse_Syntax_Base.term ->
     Pulse_Syntax_Base.term ->
