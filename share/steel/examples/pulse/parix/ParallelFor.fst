@@ -584,7 +584,10 @@ fn h_for_task
 }
 ```
 
-(* Assuming a wait that only needs epsilon permission, I think that's ok *)
+(* Assuming a wait that only needs epsilon permission. We would actually
+need one that takes epsilon permission + a promise for (1-e), or something
+similar. Otherwise we cannot rule out some other thread holding permission
+to the task pool, and we would not be allowed to free it. *)
 assume
 val wait_pool
   (p:pool)
@@ -603,44 +606,48 @@ parallel_for_hier
 {
   let p = setup_pool 42;
 
-(*
-  // Spawning the first task: useless! Just call
+  if (false) { // Checking that both branches would work
+    (* Spawning the first task: useless! Just call it! *)
+    assert (pool_alive #full_perm p);
+    split_alive p full_perm;
 
-  assert (pool_alive #full_perm p);
-  split_alive p full_perm;
-
-  rewrite (pool_alive #(half_perm full_perm) p ** pool_alive #(half_perm full_perm) p)
-       as (pool_alive #one_half p ** pool_alive #one_half p);
-  assert (pool_alive #one_half p ** pool_alive #one_half p);
+    rewrite (pool_alive #(half_perm full_perm) p ** pool_alive #(half_perm full_perm) p)
+        as (pool_alive #one_half p ** pool_alive #one_half p);
+    assert (pool_alive #one_half p ** pool_alive #one_half p);
 
 
-  gspawn_ #(pool_alive #one_half p ** range pre 0 n)
-          #(promise (pool_done p) (range post 0 n))
-          #one_half
-          p
-          (h_for_task p one_half pre post f 0 n);
+    gspawn_ #(pool_alive #one_half p ** range pre 0 n)
+            #(promise (pool_done p) (range post 0 n))
+            #one_half
+            p
+            (h_for_task p one_half pre post f 0 n);
 
-  (* We get this complicated promise from the spawn above. We can
-  massage it before even waiting. *)
-  assert (promise (pool_done p) (promise (pool_done p) (range post 0 n)));
+    (* We get this complicated promise from the spawn above. We can
+    massage it before even waiting. *)
+    assert (promise (pool_done p) (promise (pool_done p) (range post 0 n)));
 
-  squash_promise (pool_done p) (range post 0 n);
+    squash_promise (pool_done p) (range post 0 n);
 
-  (* Better *)
-  assert (promise (pool_done p) (range post 0 n));
-*)
+    assert (promise (pool_done p) (range post 0 n));
 
-  split_alive p full_perm;
-  h_for_task p (half_perm full_perm) pre post f 0 n ();
+    wait_pool p one_half;
 
-  wait_pool p (half_perm full_perm);
+    redeem_promise (pool_done p) (range post 0 n);
 
-  assert (pool_done p);
+    drop_ (pool_done p);
+  } else {
+    (* Directly calling is much easier, and actually better all around. *)
+    split_alive p full_perm;
+    h_for_task p (half_perm full_perm) pre post f 0 n ();
 
-  redeem_promise (pool_done p) (range post 0 n);
+    wait_pool p (half_perm full_perm);
 
-  drop_ (pool_done p);
-  ()
+    assert (pool_done p);
+
+    redeem_promise (pool_done p) (range post 0 n);
+
+    drop_ (pool_done p);
+  }
 }
 ```
 
