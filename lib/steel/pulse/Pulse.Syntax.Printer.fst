@@ -8,6 +8,8 @@ module T = FStar.Tactics.V2
 module Un = FStar.Sealed
 module R = FStar.Reflection.V2
 
+module RU = Pulse.RuntimeUtils
+
 let tot_or_ghost_to_string = function
   | T.E_Total -> "total"
   | T.E_Ghost -> "ghost"
@@ -44,10 +46,108 @@ let qual_to_string = function
 
 let indent (level:string) = level ^ "\t"
     
+let rec term_to_doc t
+  : T.Tac document
+  = match t.t with
+    | Tm_Emp -> doc_of_string "emp"
+
+    | Tm_Pure p -> doc_of_string "pure" ^/^ parens (term_to_doc p)
+    | Tm_Star p1 p2 ->
+      infix 2 1 (doc_of_string "**")
+                (term_to_doc p1)
+                (term_to_doc p2)
+
+    | Tm_ExistsSL _ b body ->
+      parens (doc_of_string "exists" ^/^ parens (doc_of_string (T.unseal b.binder_ppname.name)
+                                                  ^^ doc_of_string ":"
+                                                  ^^ term_to_doc b.binder_ty)
+              ^^ doc_of_string "."
+              ^/^ term_to_doc body)
+
+    | Tm_ForallSL u b body ->
+      parens (doc_of_string "forall" ^/^ parens (doc_of_string (T.unseal b.binder_ppname.name)
+                                                  ^^ doc_of_string ":"
+                                                  ^^ term_to_doc b.binder_ty)
+              ^^ doc_of_string "."
+              ^/^ term_to_doc body)
+
+    | Tm_VProp -> doc_of_string "vprop"
+    | Tm_Inames -> doc_of_string "inames"
+    
+    | Tm_AddInv i is -> doc_of_string "add_inv" ^/^ term_to_doc i ^/^ term_to_doc is
+    | Tm_Inv i -> doc_of_string "inv " ^/^ term_to_doc i
+    | Tm_EmpInames -> doc_of_string "emp_inames"
+    | Tm_Unknown -> doc_of_string "_"
+    | Tm_FStar t ->
+      // Should call term_to_doc when available
+      doc_of_string (T.term_to_string t)
+
+let term_to_string t = RU.renderdoc (term_to_doc t)
+
+let binder_to_string (b:binder)
+  : T.Tac string
+  = sprintf "%s:%s" 
+            (T.unseal b.binder_ppname.name)
+            (term_to_string b.binder_ty)
+
+let ctag_to_string = function
+  | STT -> "ST"
+  | STT_Atomic -> "STAtomic"
+  | STT_Ghost -> "STGhost"
+
+// FIXME: track whether parentheses are needed. Or can we somehow detect
+// if a doc is atomic?
+let comp_to_doc (c:comp)
+  : T.Tac document
+  = match c with
+    | C_Tot t -> 
+      nest 2 (
+      doc_of_string "Tot" ^/^ term_to_doc t
+      )
+      
+    | C_ST s ->
+      nest 2 (
+      group (doc_of_string "stt" ^/^ term_to_doc s.res)
+      ^/^ nest 2 (group (parens (doc_of_string "requires" ^/^ term_to_doc s.pre)))
+      ^/^ nest 2 (group (parens (doc_of_string "ensures" ^/^ term_to_doc s.post)))
+      )
+
+    | C_STAtomic inames s ->
+      nest 2 (
+      group (doc_of_string "stt_atomic" ^/^ term_to_doc inames ^/^ term_to_doc s.res)
+      ^/^ group (parens (doc_of_string "requires" ^/^ term_to_doc s.pre))
+      ^/^ group (parens (doc_of_string "ensures" ^/^ term_to_doc s.post))
+      )
+
+    | C_STGhost inames s ->
+      nest 2 (
+      group (doc_of_string "stt_ghost" ^/^ term_to_doc inames ^/^ term_to_doc s.res)
+      ^/^ nest 2 (group (parens (doc_of_string "requires" ^/^ term_to_doc s.pre)))
+      ^/^ nest 2 (group (parens (doc_of_string "ensures" ^/^ term_to_doc s.post)))
+      )
+
+let comp_to_string c = RU.renderdoc (comp_to_doc c)
+
+let term_opt_to_string (t:option term)
+  : T.Tac string
+  = match t with
+    | None -> ""
+    | Some t -> term_to_string t
+
+let term_list_to_string (sep:string) (t:list term)
+  : T.Tac string
+  = String.concat sep (T.map term_to_string t)
+
+
 let rec term_to_string' (level:string) (t:term)
   : T.Tac string
   = match t.t with
     | Tm_Emp -> "emp"
+
+    | Tm_Inv p ->
+      sprintf "inv (\n%s%s)"
+        (indent level)
+        (term_to_string' (indent level) p)
 
     | Tm_Pure p ->
       sprintf "pure (\n%s%s)" 
@@ -77,90 +177,10 @@ let rec term_to_string' (level:string) (t:term)
     | Tm_VProp -> "vprop"
     | Tm_Inames -> "inames"
     | Tm_EmpInames -> "emp_inames"
+    | Tm_AddInv i is -> sprintf "(add_inv %s %s)" (term_to_string' level i) (term_to_string' level is)
     | Tm_Unknown -> "_"
     | Tm_FStar t ->
       T.term_to_string t
-let term_to_string t = term_to_string' "" t
-
-let rec term_to_doc t
-  : T.Tac document
-  = match t.t with
-    | Tm_Emp -> doc_of_string "emp"
-
-    | Tm_Pure p -> doc_of_string "pure" ^/^ parens (term_to_doc p)
-    | Tm_Star p1 p2 ->
-      infix 2 1 (doc_of_string "**")
-                (term_to_doc p1)
-                (term_to_doc p2)
-
-    | Tm_ExistsSL _ b body ->
-      parens (doc_of_string "exists" ^/^ parens (doc_of_string (T.unseal b.binder_ppname.name)
-                                                  ^^ doc_of_string ":"
-                                                  ^^ term_to_doc b.binder_ty)
-              ^^ doc_of_string "."
-              ^/^ term_to_doc body)
-
-    | Tm_ForallSL u b body ->
-      parens (doc_of_string "forall" ^/^ parens (doc_of_string (T.unseal b.binder_ppname.name)
-                                                  ^^ doc_of_string ":"
-                                                  ^^ term_to_doc b.binder_ty)
-              ^^ doc_of_string "."
-              ^/^ term_to_doc body)
-
-    | Tm_VProp -> doc_of_string "vprop"
-    | Tm_Inames -> doc_of_string "inames"
-    | Tm_EmpInames -> doc_of_string "emp_inames"
-    | Tm_Unknown -> doc_of_string "_"
-    | Tm_FStar t ->
-      // Should call term_to_doc when available
-      doc_of_string (T.term_to_string t)
-
-let binder_to_string (b:binder)
-  : T.Tac string
-  = sprintf "%s:%s" 
-            (T.unseal b.binder_ppname.name)
-            (term_to_string b.binder_ty)
-
-let ctag_to_string = function
-  | STT -> "ST"
-  | STT_Atomic -> "STAtomic"
-  | STT_Ghost -> "STGhost"
-
-let comp_to_string (c:comp)
-  : T.Tac string
-  = match c with
-    | C_Tot t -> 
-      sprintf "Tot %s" (term_to_string t)
-      
-    | C_ST s ->
-      sprintf "stt %s (requires\n%s) (ensures\n%s)"
-              (term_to_string s.res)
-              (term_to_string s.pre)
-              (term_to_string s.post)
-
-    | C_STAtomic inames s ->
-      sprintf "stt_atomic %s %s (requires\n%s) (ensures\n%s)"
-              (term_to_string inames)
-              (term_to_string s.res)
-              (term_to_string s.pre)
-              (term_to_string s.post)
-
-    | C_STGhost inames s ->
-      sprintf "stt_atomic %s %s (requires\n%s) (ensures\n%s)"
-              (term_to_string inames)
-              (term_to_string s.res)
-              (term_to_string s.pre)
-              (term_to_string s.post)
-
-let term_opt_to_string (t:option term)
-  : T.Tac string
-  = match t with
-    | None -> ""
-    | Some t -> term_to_string t
-
-let term_list_to_string (sep:string) (t:list term)
-  : T.Tac string
-  = String.concat sep (T.map term_to_string t)
 
 let rec st_term_to_string' (level:string) (t:st_term)
   : T.Tac string
@@ -317,6 +337,12 @@ let rec st_term_to_string' (level:string) (t:st_term)
       sprintf "%s %s %s; %s" with_prefix ht p
         (st_term_to_string' level t)
 
+    | Tm_WithInv { name; body } ->
+      sprintf "with_invariant %s. {\n%s\n}"
+        (term_to_string name)
+        (st_term_to_string' (indent level) body)
+
+
 and branches_to_string brs : T.Tac _ =
   match brs with
   | [] -> ""
@@ -331,12 +357,14 @@ let st_term_to_string t = st_term_to_string' "" t
 let tag_of_term (t:term) =
   match t.t with
   | Tm_Emp -> "Tm_Emp"
+  | Tm_Inv _ -> "Tm_Inv"
   | Tm_Pure _ -> "Tm_Pure"
   | Tm_Star _ _ -> "Tm_Star"
   | Tm_ExistsSL _ _ _ -> "Tm_ExistsSL"
   | Tm_ForallSL _ _ _ -> "Tm_ForallSL"
   | Tm_VProp -> "Tm_VProp"
   | Tm_Inames -> "Tm_Inames"
+  | Tm_AddInv _ _ -> "Tm_AddInv"
   | Tm_EmpInames -> "Tm_EmpInames"
   | Tm_Unknown -> "Tm_Unknown"
   | Tm_FStar _ -> "Tm_FStar"
@@ -359,6 +387,7 @@ let tag_of_st_term (t:st_term) =
   | Tm_Rewrite _ -> "Tm_Rewrite"
   | Tm_Admit _ -> "Tm_Admit"
   | Tm_ProofHintWithBinders _ -> "Tm_ProofHintWithBinders"
+  | Tm_WithInv _ -> "Tm_WithInv"
 
 let tag_of_comp (c:comp) : T.Tac string =
   match c with
@@ -388,6 +417,7 @@ let rec print_st_head (t:st_term)
   | Tm_IntroExists _ -> "IntroExists"
   | Tm_ElimExists _ -> "ElimExists"  
   | Tm_ProofHintWithBinders _ -> "AssertWithBinders"
+  | Tm_WithInv _ -> "WithInv"
 and print_head (t:term) =
   match t with
   // | Tm_FVar fv
@@ -414,3 +444,4 @@ let rec print_skel (t:st_term) =
   | Tm_IntroExists _ -> "IntroExists"
   | Tm_ElimExists _ -> "ElimExists"
   | Tm_ProofHintWithBinders _ -> "AssertWithBinders"
+  | Tm_WithInv _ -> "WithInv"

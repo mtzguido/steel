@@ -29,9 +29,12 @@ let rec freevars_close_term' (e:term) (x:var) (i:index)
     | Tm_EmpInames
     | Tm_Unknown -> ()
 
+    | Tm_Inv p ->
+      freevars_close_term' p x i
     | Tm_Pure p ->
       freevars_close_term' p x i
 
+    | Tm_AddInv l r
     | Tm_Star l r ->
       freevars_close_term' l x i;
       freevars_close_term' r x i
@@ -192,6 +195,11 @@ let rec freevars_close_st_term' (t:st_term) (x:var) (i:index)
       let n = L.length binders in
       freevars_close_proof_hint' hint_type x (i + n);
       freevars_close_st_term' t x (i + n)
+
+    | Tm_WithInv { name; body; returns_inv } ->
+      freevars_close_term' name x i;
+      freevars_close_term_opt' returns_inv x i;
+      freevars_close_st_term' body x i
 #pop-options
 
 let freevars_close_term (e:term) (x:var) (i:index)
@@ -408,7 +416,7 @@ let freevars_ref (t:term)
   = admit()
 
 // FIXME: tame this proof
-#push-options "--fuel 2 --ifuel 1 --z3rlimit_factor 10 --query_stats --retry 5"
+#push-options "--fuel 2 --ifuel 1 --z3rlimit_factor 15 --query_stats --retry 5"
 let rec st_typing_freevars (#g:_) (#t:_) (#c:_)
                            (d:st_typing g t c)
   : Lemma 
@@ -587,4 +595,13 @@ let rec st_typing_freevars (#g:_) (#t:_) (#c:_)
      tot_or_ghost_typing_freevars pre_typing;
      tot_or_ghost_typing_freevars post_typing;
      freevars_open_term s.post (term_of_no_name_var x) 0
+
+   | T_WithInv _ _ _ _ _ _ _ _ ->
+     admit () // IOU
+
+   | T_SubInvsGhost _ _ _ inames2 _ _ d ->
+     st_typing_freevars d;
+     assume (freevars inames2 `Set.subset` vars_of_env g);
+     // FIXME: get this from inversion, or add it to the rule
+     ()
 #pop-options //takes about 12s

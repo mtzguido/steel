@@ -58,6 +58,7 @@ let r p = rng (fst p) (snd p)
 
 /* pulse specific tokens; rest are inherited from F* */
 %token MUT FN INVARIANT WHILE REF PARALLEL REWRITE FOLD GHOST ATOMIC EACH
+%token WITH_INVS OPENS
 
 %start pulseDecl
 %start peekFnId
@@ -71,15 +72,25 @@ peekFnId:
       { FStar_Ident.string_of_id id }
 
 qual:
-  | GHOST { PulseSugar.STGhost (unit_const (rr $loc)) }
-  | ATOMIC { PulseSugar.STAtomic (unit_const (rr $loc)) }
+  | GHOST { PulseSugar.STGhost }
+  | ATOMIC { PulseSugar.STAtomic }
 
 /* This is the main entry point for the pulse parser */
 pulseDecl:
-  | q=option(qual) FN lid=lident bs=nonempty_list(pulseMultiBinder) ascription=pulseComputationType LBRACE body=pulseStmt RBRACE
+  | q=option(qual) f=FN lid=lident bs=nonempty_list(pulseMultiBinder) comp_ascriptions=compAscriptions LBRACE body=pulseStmt RBRACE
     {
-      let ascription = with_computation_tag ascription q in
-      PulseSugar.mk_decl lid (List.flatten bs) ascription body (rr $loc)
+      let tag = dflt PulseSugar.ST q in
+      let ( preconditions, returns_, postconditions, opens ) = comp_ascriptions in
+      (* FIXME this is stupid *)
+      let return_name, return_type =
+        match returns_ with
+        | [x] -> x
+        | [] -> default_return
+      in
+      let c : PulseSugar.computation_type =
+                PulseSugar.mk_comp tag preconditions return_name return_type postconditions opens (rr2 $loc(f) $loc(comp_ascriptions))
+      in
+      PulseSugar.mk_decl lid (List.flatten bs) c body (rr $loc)
     }
 
 pulseMultiBinder:
@@ -88,19 +99,21 @@ pulseMultiBinder:
   | q=option(HASH) id=lidentOrUnderscore
     { [(as_aqual q, id, mk_term Wild (rr ($loc(id))) Un)] }
 
-pulseComputationType:
-  | REQUIRES t=pulseVprop
-    ret=option(RETURNS i=lidentOrUnderscore COLON r=term { (i, r) })
-    ENSURES t2=pulseVprop
+compAscriptions:
+  | l=list(compAscription)
     {
-        let i, r =
-          match ret with
-          | Some (i, r) -> i, r
-          | None -> default_return
-        in
-        PulseSugar.mk_comp ST t i r t2 (rr $loc)
+      fold_right (fun (a,b,c,d) (aa,bb,cc,dd) -> (a@aa, b@bb, c@cc, d@dd)) l ([],[],[],[])
     }
 
+compAscription:
+  | REQUIRES t=pulseVprop   { ([t], [],  [], []) }
+
+  | RETURNS i=lidentOrUnderscore COLON r=term 
+     { ([], [(i, r)], [], []) }
+     (* ^ FIXME: make binding optional *)
+
+  | ENSURES  t=pulseVprop   { ([],  [],  [t], []) }
+  | OPENS    inv=appTermNoRecordExp { ([],  [],  [], [inv]) }
 
 pulseStmtNoSeq:
   | OPEN i=quident
@@ -146,6 +159,8 @@ pulseStmtNoSeq:
     { PulseSugar.mk_proof_hint_with_binders (UNFOLD (ns,p)) bs }
   | bs=withBindersOpt FOLD ns=option(names) p=pulseVprop
     { PulseSugar.mk_proof_hint_with_binders (FOLD (ns,p)) bs }
+  | WITH_INVS names=nonempty_list(atomicTerm) r=option(ensuresVprop) LBRACE body=pulseStmt RBRACE
+    { PulseSugar.mk_with_invs names body r }
 
 rewriteBody:
   | EACH pairs=separated_nonempty_list (COMMA, x=appTerm AS y=appTerm { (x, y)}) goal=option(IN t=pulseVprop { t })

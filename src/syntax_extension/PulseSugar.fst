@@ -2,6 +2,7 @@ module PulseSugar
 open FStar.Ident
 module A = FStar.Parser.AST
 let rng = FStar.Compiler.Range.range
+let dummyRange = FStar.Compiler.Range.dummyRange
 
 type binder = A.aqual & ident & A.term
 
@@ -23,15 +24,16 @@ let as_vprop (v:vprop') (r:rng) = { v; vrange=r}
 
 type st_comp_tag = 
   | ST
-  | STAtomic of A.term
-  | STGhost of A.term
+  | STAtomic
+  | STGhost
 
 type computation_type = {
      tag: st_comp_tag;
-     precondition:vprop;
+     preconditions:list vprop;
      return_name:ident;
      return_type:A.term;
-     postcondition: vprop;
+     postconditions: list vprop;
+     opens:list A.term;
      range:rng
 }
 
@@ -130,6 +132,12 @@ type stmt' =
       binders:binders;
     }
 
+  | WithInvariants {
+      names : list A.term;
+      body  : stmt;
+      returns_ : option vprop;
+    }
+
 and stmt = {
   s:stmt';
   range:rng
@@ -143,15 +151,15 @@ type decl = {
   range:rng
 }
 
-
-(* Convenience builders for use from OCaml/Menhir, since field names get mangled in OCaml *)
-let mk_comp tag precondition return_name return_type postcondition range = 
+(* Convenience builders for use from OCaml/Menhir, since field names get mangled in OCaml. *)
+let mk_comp tag preconditions return_name return_type postconditions opens range =
   {
      tag;
-     precondition;
+     preconditions;
      return_name;
      return_type;
-     postcondition;
+     postconditions;
+     opens;
      range
   }
 
@@ -172,3 +180,4 @@ let mk_open lid = Open lid
 let mk_par p1 p2 q1 q2 b1 b2 = Parallel { p1; p2; q1; q2; b1; b2 }
 let mk_rewrite p1 p2 = Rewrite { p1; p2 }
 let mk_proof_hint_with_binders ht bs =  ProofHintWithBinders { hint_type=ht; binders=bs }
+let mk_with_invs names body returns_ = WithInvariants { names; body; returns_ }

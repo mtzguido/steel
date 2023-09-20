@@ -65,3 +65,6 @@ let deep_transform_to_unary_applications (t:S.term) =
     t
 
 let deep_compress (t:S.term) = FStar_Syntax_Compress.deep_compress_uvars t
+
+let renderdoc (d:FStar_Pprint.document) : string =
+   FStar_Pprint.pretty_string 1.0 (Z.of_int 80) d
