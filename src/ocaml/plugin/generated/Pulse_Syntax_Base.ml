@@ -424,6 +424,27 @@ let uu___is_Tm_Admit uu___ =
 let uu___is_Tm_ProofHintWithBinders uu___ =
   match uu___ with | Tm_ProofHintWithBinders _ -> true | _ -> false
 type branch = (pattern * st_term)
+type decl__FnDecl__payload =
+  {
+  id: FStar_Reflection_Types.ident ;
+  isrec: Prims.bool ;
+  body5: st_term }
+and decl =
+  | FnDecl of decl__FnDecl__payload 
+let (__proj__Mkdecl__FnDecl__payload__item__id :
+  decl__FnDecl__payload -> FStar_Reflection_Types.ident) =
+  fun projectee -> match projectee with | { id; isrec; body5 = body;_} -> id
+let (__proj__Mkdecl__FnDecl__payload__item__isrec :
+  decl__FnDecl__payload -> Prims.bool) =
+  fun projectee ->
+    match projectee with | { id; isrec; body5 = body;_} -> isrec
+let (__proj__Mkdecl__FnDecl__payload__item__body :
+  decl__FnDecl__payload -> st_term) =
+  fun projectee ->
+    match projectee with | { id; isrec; body5 = body;_} -> body
+let (uu___is_FnDecl : decl -> Prims.bool) = fun projectee -> true
+let (__proj__FnDecl__item___0 : decl -> decl__FnDecl__payload) =
+  fun projectee -> match projectee with | FnDecl _0 -> _0
 let (null_binder : term -> binder) =
   fun t -> { binder_ty = t; binder_ppname = ppname_default }
 let (mk_binder : Prims.string -> range -> term -> binder) =
@@ -710,3 +731,9 @@ type nvar = (ppname * var)
 let (v_as_nv : var -> nvar) = fun x -> (ppname_default, x)
 let (as_binder : term -> binder) =
   fun t -> { binder_ty = t; binder_ppname = ppname_default }
+let rec (st_term_arity : st_term -> Prims.nat) =
+  fun s ->
+    match s.term1 with
+    | Tm_Abs { b = uu___; q = uu___1; ascription = uu___2; body;_} ->
+        Prims.int_one + (st_term_arity body)
+    | uu___ -> Prims.int_zero
