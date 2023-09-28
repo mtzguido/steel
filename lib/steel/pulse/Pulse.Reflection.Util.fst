@@ -1,6 +1,7 @@
 module Pulse.Reflection.Util
 
 module R = FStar.Reflection.V2
+module T = FStar.Tactics.V2
 module RT = FStar.Reflection.Typing
 module RU = Pulse.RuntimeUtils
 open FStar.List.Tot
@@ -600,3 +601,12 @@ let mk_pts_to (a:R.term) (r:R.term) (perm:R.term) (v:R.term) : R.term =
 let full_perm_tm : R.term =
   let open R in
   pack_ln (Tv_FVar (pack_fv full_perm_lid))
+
+let mk_opaque_let (g:R.env) (nm:string) (tm:Ghost.erased R.term) (ty:R.typ{RT.typing g tm (T.E_Total, ty)}) : T.Tac (RT.sigelt_for g) =
+  let fv = R.pack_fv (T.cur_module () @ [nm]) in
+  let lb = R.pack_lb ({ lb_fv = fv; lb_us = []; lb_typ = ty; lb_def = (`_) }) in
+  let se = R.pack_sigelt (R.Sg_Let false [lb]) in
+  let pf : RT.sigelt_typing g se =
+    RT.ST_Let_Opaque g fv ty ()
+  in
+  (true, se, None)

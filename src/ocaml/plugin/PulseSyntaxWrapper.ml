@@ -222,3 +222,11 @@ let bvs_as_subst bvs =
 let subst_term s t = Pulse_Syntax_Naming.subst_term t s
 let subst_st_term s t = Pulse_Syntax_Naming.subst_st_term t s
 let subst_proof_hint s t = Pulse_Syntax_Naming.subst_proof_hint t s
+
+type decl = Pulse_Syntax_Base.decl
+
+let fn_decl id isrec body = FnDecl { id; isrec; body5=body  } (* fixme *)
+
+let mark_recursive d =
+  match d with
+  | FnDecl d -> FnDecl { d with isrec = true }

@@ -269,6 +269,13 @@ and st_term = {
 
 and branch = pattern & st_term
 
+noeq
+type decl =
+  | FnDecl { 
+      id : R.ident;
+      isrec : bool;
+      body : st_term;
+  }
 
 let null_binder (t:term) : binder =
   {binder_ty=t;binder_ppname=ppname_default}
@@ -345,3 +352,6 @@ let comp_inames (c:comp { C_STAtomic? c \/ C_STGhost? c }) : term =
 let nvar = ppname & var 
 let v_as_nv x : nvar = ppname_default, x
 let as_binder (t:term) = { binder_ty=t; binder_ppname=ppname_default}
+
+(* Counts Tm_abs nodes *)
+val st_term_arity : st_term -> nat

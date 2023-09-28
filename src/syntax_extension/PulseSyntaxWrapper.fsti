@@ -100,3 +100,9 @@ val bvs_as_subst (l:list var) : subst
 val subst_term (s:subst) (t:term) : term
 val subst_st_term (s:subst) (t:st_term) : st_term
 val subst_proof_hint (s:subst) (h:hint_type) : hint_type
+
+new
+val decl : Type0
+
+val fn_decl : ident -> bool -> st_term -> decl
+val mark_recursive : decl -> decl
