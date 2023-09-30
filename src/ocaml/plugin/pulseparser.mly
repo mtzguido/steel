@@ -82,10 +82,14 @@ qual:
 
 /* This is the main entry point for the pulse parser */
 pulseDecl:
-  | q=option(qual) FN isRec=maybeRec lid=lident bs=nonempty_list(pulseMultiBinder) ascription=pulseComputationType LBRACE body=pulseStmt RBRACE
+  | q=option(qual)
+    FN isRec=maybeRec lid=lident bs=nonempty_list(pulseMultiBinder)
+    ascription=pulseComputationType
+    measure=option(DECREASES m=appTermNoRecordExp {m})
+    LBRACE body=pulseStmt RBRACE
     {
       let ascription = with_computation_tag ascription q in
-      PulseSugar.mk_fn_decl lid isRec (List.flatten bs) ascription body (rr $loc)
+      PulseSugar.mk_fn_decl lid isRec (List.flatten bs) ascription measure body (rr $loc)
     }
 
 pulseMultiBinder:

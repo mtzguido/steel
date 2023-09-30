@@ -35,13 +35,13 @@ let main' (nm:string) (d:decl) (pre:term) (g:RT.fstar_top_env)
       | FnDecl { id; isrec; body } -> begin
         match body.term with
         | Tm_Abs _ ->
-          let nm_orig = nm in
-          let nm =
-            if isrec
-            then "__recaux_" ^ nm
-            else nm
-          in
           let rng = body.range in
+          let nm_orig = nm in
+          let nm, body =
+            if isrec
+            then "__recaux_" ^ nm, Recursion.add_knot g rng body nm nm_orig
+            else nm, body
+          in
           let (| body, c, t_typing |) = Pulse.Checker.Abs.check_abs g body Pulse.Checker.check in
           Pulse.Checker.Prover.debug_prover g
             (fun _ -> Printf.sprintf "\ncheck call returned in main with:\n%s\n"

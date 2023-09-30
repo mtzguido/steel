@@ -993,7 +993,7 @@ let comp_to_ast_term (c:Sugar.computation_type) : err A.term =
   let t = mk_term (App (t, post, Nothing)) r Expr in
   return t
 
-let mk_arr (env:env_t) (bs:Sugar.binders) (res:Sugar.computation_type)
+let mk_knot_arr (env:env_t) (meas : option A.term) (bs:Sugar.binders) (res:Sugar.computation_type)
 : err A.term
 =
   let r = range_of_id res.return_name in
@@ -1002,16 +1002,20 @@ let mk_arr (env:env_t) (bs:Sugar.binders) (res:Sugar.computation_type)
   let bs'' = bs |> L.map (fun (q, x, ty) ->
     A.mk_binder (A.Annotated (x, ty)) r A.Expr q)
   in
+  let last = L.last bs'' in
+  let init = L.init bs'' in
+  let bs'' = init @ [last] in
   return (A.mk_term (A.Product (bs'', res_t)) r A.Expr)
 
 let rec desugar_decl (env:env_t)
                      (d:Sugar.decl)
   : err SW.decl
   = match d with
-    | Sugar.FnDecl p when p.is_rec ->
+    | Sugar.FnDecl p when false && p.is_rec ->
       (* add the recursive knot binder, and desugar, but make sure to
-      mark the result as recursive. *)
-      let? ty = mk_arr env p.binders p.ascription in
+      mark the result as recursive. If the effect is not stt, the recursive
+      binding has its last argument refined with the measure. *)
+      let? ty = mk_knot_arr env p.measure p.binders p.ascription in
       let binders' = p.binders @ [ (None, p.id, ty) ] in
       let p' = { p with is_rec = false; binders = binders' } in
       let? d = desugar_decl env (Sugar.FnDecl p') in
@@ -1028,6 +1032,16 @@ let rec desugar_decl (env:env_t)
         if FStar.Options.ext_getv "pulse:rvalues" <> ""
         then transform_stmt { map=[]; env=env} p.body
         else return p.body
+      in
+      (* Perhaps push the recursive binding. *)
+      let? env : env_t =
+        if p.is_rec
+        then
+          // let? ty = mk_knot_arr env p.measure p.binders p.ascription in
+          let env, _ = push_bv env p.id in
+          return env
+        else
+          return env
       in
       let? body = desugar_stmt env body in
       let rec aux (bs:list (option SW.qualifier & SW.binder)) (bvs:list S.bv) =

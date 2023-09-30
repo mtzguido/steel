@@ -8,6 +8,24 @@ open Pulse.Syntax
 open Pulse.Typing
 module P = Pulse.Syntax.Printer
 
+type tm_abs_zip = binder & option qualifier & comp
+
+let add_knot (g : env) (rng : R.range)
+             (body : st_term)
+             (nm : string) (nm_orig : string)
+: Tac (st:st_term{Tm_Abs? st.term})
+= 
+  let rec aux (scope:list tm_abs_zip) (st:st_term) : Tac st_term =
+    match st.term with
+    | Tm_Abs {b;q;ascription;body} ->
+      aux ((b,q,ascription) :: scope) body
+    | _ ->
+      Tactics.fail ""
+  in
+  let r = aux [] body in
+  assume (Tm_Abs? r.term);
+  r
+
 let tie_knot (g : env)  (rng : R.range)
              (body : st_term) (c : comp)
              (nm : string) (nm_orig : string)
