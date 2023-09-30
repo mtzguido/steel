@@ -4,30 +4,78 @@ open Pulse.Lib.Pervasives
 open Pulse.Lib.Fixpoints
 
 ```pulse
-fn __test1
+fn rec test1
   (x:unit)
-  (__test1 : (unit -> stt unit emp (fun _ -> pure False)))
   requires emp
   ensures pure False
 {
-  let x = perform (fun () -> __test1 ());
+  let x = perform (fun () -> test1 ());
   ()
 }
 ```
-let test1 = fix_stt_1 __test1
+
+let _ = test1 
 
 ```pulse
 fn rec test2
-  (x:unit)
+  (y:nat)
   requires emp
-  ensures pure False
+  ensures emp
 {
-  let x = perform (fun () -> test2 ());
-  ()
+  if (y > 0) {
+    perform (fun () -> test2 (y-1));
+    ()
+  }
 }
 ```
 
-let _ = test2
+```pulse
+fn rec test3
+  (z:nat)
+  (y:nat)
+  requires emp
+  returns _:int
+  ensures emp
+{
+  if (y > 0) {
+    perform (fun () -> test3 (z+1) (y-1));
+  } else {
+    z
+  }
+}
+```
+
+// SMT encoding failure...? not sure if fixpoints here are the problem
+// ```pulse
+// fn rec test4
+//   (r : ref int)
+//   (v : erased int)
+//   (y : nat)
+//   requires pts_to r v
+//   ensures pts_to r (v+y)
+// {
+//   if (y > 0) {
+//     perform (fun () -> test4 r v (y-1));
+//     let v = !r;
+//     r := v+1;
+//   }
+// }
+// ```
+
+```pulse
+ghost
+fn rec test5
+  (z:nat)
+  (y:nat)
+  requires emp
+  ensures emp
+  decreases (y+z)
+{
+  perform_ghost (fun () -> test5 z y)
+}
+```
+
+
 
 (*
 let x = test2
