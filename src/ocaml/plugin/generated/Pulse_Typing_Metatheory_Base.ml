@@ -532,6 +532,29 @@ let rec (st_typing_weakening :
                     ((Pulse_Typing_Env.push_env
                         (Pulse_Typing_Env.push_env g g1) g'), s, c1,
                       (st_comp_typing_weakening g g' s d_s g1))
+              | Pulse_Typing.T_WithInv
+                  (uu___, uu___1, uu___2, p_typing, inv_typing, uu___3,
+                   uu___4, body_typing)
+                  ->
+                  Pulse_Typing.T_WithInv
+                    ((Pulse_Typing_Env.push_env
+                        (Pulse_Typing_Env.push_env g g1) g'), uu___1, uu___2,
+                      (), (), uu___3, uu___4,
+                      (st_typing_weakening g g' uu___3
+                         (Pulse_Typing.add_frame uu___4 uu___2) body_typing
+                         g1))
+              | Pulse_Typing.T_SubInvsGhost
+                  (uu___, uu___1, uu___2, i2, uu___3, pf, d1) ->
+                  Pulse_Typing.T_SubInvsGhost
+                    ((Pulse_Typing_Env.push_env
+                        (Pulse_Typing_Env.push_env g g1) g'), uu___1, uu___2,
+                      i2, uu___3,
+                      (prop_validity_token_weakening uu___
+                         (Pulse_Typing.tm_inames_subset uu___2 i2) pf
+                         (Pulse_Typing_Env.push_env
+                            (Pulse_Typing_Env.push_env g g1) g')),
+                      (st_typing_weakening g g' uu___1
+                         (Pulse_Syntax_Base.C_STGhost (uu___2, uu___3)) d1 g1))
 let (nt :
   Pulse_Syntax_Base.var ->
     Pulse_Syntax_Base.term -> Pulse_Syntax_Naming.subst_elt Prims.list)
