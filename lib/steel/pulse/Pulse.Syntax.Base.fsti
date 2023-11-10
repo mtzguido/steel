@@ -83,7 +83,7 @@ type term' =
   | Tm_Inv        : vprop -> term'
   | Tm_Inames     : term'  // type inames
   | Tm_EmpInames  : term'
-  | Tm_AddInv     : term -> term -> term'
+  | Tm_AddInv     : i:term -> is:term -> term'
   | Tm_FStar      : host_term -> term'
   | Tm_Unknown    : term'
 

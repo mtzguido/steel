@@ -140,7 +140,7 @@ let check
   
   (let open Pulse.PP in
    info_doc g (Some body.range) [
-     text "Checked body at comp type:" ^/^ P.comp_to_doc c_body
+     text "Checked body at comp type:" ^/^ arbitrary_string (P.comp_to_string c_body)
    ]);
 
   let add_iname (inames:term) (i:term) : T.Tac term =
