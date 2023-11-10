@@ -119,8 +119,6 @@ val add_already_there #p (i : inv p) (is : inames)
           (ensures add_inv is i == is)
           [SMTPat (add_inv is i)]
 
-let (/!) : inames -> inames -> Type0 = fun is1 is2 -> Set.disjoint is1 is2
-
 (* stt a pre post: The type of a pulse computation
    that when run in a state satisfying `pre`
    may loop forever
