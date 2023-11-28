@@ -648,7 +648,7 @@ let open_proof_hint_ln_inv (ht:proof_hint_type) (x:term { ln x }) (i:index)
       open_term_ln_inv' t1 x i;
       open_term_ln_inv' t2 x i
 
-#push-options "--z3rlimit_factor 2 --fuel 2 --ifuel 2"
+#push-options "--z3rlimit 20 --fuel 2 --ifuel 2"
 let rec open_term_ln_inv_st' (t:st_term)
                              (x:term { ln x })
                              (i:index)
