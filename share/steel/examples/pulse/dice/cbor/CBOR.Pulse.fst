@@ -656,7 +656,7 @@ let cbor_map_sort_merge_invariant // FIXME: WHY WHY WHY?
         SM.seq_list_match c2 l2 (raw_data_item_map_entry_match full_perm) **
         pure (cbor_map_sort_merge_invariant_prop lo hi l1_0 l2_0 cont i1 i2 res accu l1 l2)
 
-#push-options "--print_implicits --z3rlimit 16"
+#push-options "--print_implicits --z3rlimit 32"
 
 inline_for_extraction noextract [@@noextract_to "krml"]
 let size_add (x1 x2: SZ.t) (sq: squash (SZ.fits (SZ.v x1 + SZ.v x2))) : Tot SZ.t = x1 `SZ.add` x2
